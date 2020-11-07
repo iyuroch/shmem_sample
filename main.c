@@ -41,6 +41,9 @@ int main () {
     printf("access time %i\n", shmem_atime(shm_id));
     #endif
     while (shmem_nattach(shm_id) < 2) {
+        #ifdef DEBUG 
+        printf("hangs\n");
+        #endif
 	if (*shm_val != 0)
 	    break;
 	usleep(1);
@@ -48,21 +51,23 @@ int main () {
 
     *shm_val = 0;
 
-    lock(sem_id);
-    #ifdef DEBUG
-    printf("in lock section %i\n", pid);
-    #endif
-    
-    printf("shm_val %i\n", *shm_val);
-    #ifdef DEBUG
-    printf("no. of attahced %i\n", shmem_nattach(shm_id));
-    #endif
-    *shm_val = (int ) pid;
+    for (int i = 1; i < 11; ++i) {
+        lock(sem_id);
+        #ifdef DEBUG
+        printf("in lock section %i\n", pid);
+        #endif
+        
+        printf("shm_val: %i, pid_val: %i\n", *shm_val, pid);
+        #ifdef DEBUG
+        printf("no. of attahced %i\n", shmem_nattach(shm_id));
+        #endif
+        *shm_val = (int) pid;
 
-    #ifdef DEBUG
-    printf("unlocking %i\n", pid);
-    #endif
-    unlock(sem_id);
+        #ifdef DEBUG
+        printf("unlocking %i\n", pid);
+        #endif
+        unlock(sem_id);
+    }
 }
 
 int shmem_nattach(int shm_id) {
@@ -118,7 +123,7 @@ int init_semaphore() {
 		break;
 	}
     } else {
-        struct sembuf init_val = {0, 1, SEM_UNDO};
+        struct sembuf init_val = {0, 1};
         semop(sem_id, &init_val, 1);
     }
 
@@ -126,13 +131,18 @@ int init_semaphore() {
 }
 
 void lock(int sem_id) {
-    struct sembuf block_val = {0, -1, SEM_UNDO};
-    if(semop(sem_id, &block_val, 1) == -1)
-    	perror("semop lock");
+    #ifdef DEBUG
+    printf("locking\n");
+    #endif
+
+    struct sembuf block_val = {0, -1};
+
+    if( semop(sem_id, &block_val, 1) == -1)
+        perror("semop lock");
 }
 
 void unlock(int sem_id) {
-    struct sembuf block_val = {0, 1, SEM_UNDO};
+    struct sembuf block_val = {0, 1};
     if (semop(sem_id, &block_val, 1) == -1)
     	perror("semop unlock");
 }
