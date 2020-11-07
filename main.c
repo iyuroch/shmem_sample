@@ -71,6 +71,7 @@ int main () {
 
     shmdt(shm_val);
     shmctl(shm_id, IPC_RMID, NULL);
+    // semctl(sem_id, 0, IPC_RMID, 0);
 }
 
 int shmem_nattach(int shm_id) {
