@@ -7,8 +7,8 @@
 #include <errno.h>
 #include <unistd.h>
 
-#define SEM_KEY "tmp"
-#define SHM_KEY "/dev/shm"
+#define SEM_KEY "temp"
+#define SHM_KEY "/dev/shm/tmp"
 #define PROJECT_ID 1111
 
 void lock(int sem_id);
@@ -51,7 +51,7 @@ int main () {
 
     *shm_val = 0;
 
-    for (int i = 1; i < 11; ++i) {
+    for (int i = 1; i < 200; ++i) {
         lock(sem_id);
         #ifdef DEBUG
         printf("in lock section %i\n", pid);
@@ -68,6 +68,9 @@ int main () {
         #endif
         unlock(sem_id);
     }
+
+    shmdt(shm_val);
+    shmctl(shm_id, IPC_RMID, NULL);
 }
 
 int shmem_nattach(int shm_id) {
@@ -90,7 +93,7 @@ int init_shmem() {
     if ((shm_key = ftok(SHM_KEY, PROJECT_ID)) == -1)
 	perror("ftok");
 
-    if ((shm_id = shmget(shm_key, 200, 0660 | IPC_CREAT)) == -1)
+    if ((shm_id = shmget(shm_key, sizeof(pid_t), IPC_CREAT | 0666)) == -1)
 	perror("shmget");
 
     return shm_id;
@@ -103,7 +106,7 @@ int init_semaphore() {
     if ((sem_key = ftok(SEM_KEY, PROJECT_ID)) == -1)
         perror ("ftok");
 
-    sem_id = semget(sem_key, 1, 0660 | IPC_CREAT | IPC_EXCL);
+    sem_id = semget(sem_key, 1, 0666 | IPC_CREAT | IPC_EXCL);
     if (sem_id == -1)
     {
 	if (errno != EEXIST)
