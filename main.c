@@ -51,7 +51,7 @@ int main () {
 
     *shm_val = 0;
 
-    for (int i = 1; i < 200; ++i) {
+		while (1) {
         lock(sem_id);
         #ifdef DEBUG
         printf("in lock section %i\n", pid);
@@ -67,11 +67,10 @@ int main () {
         printf("unlocking %i\n", pid);
         #endif
         unlock(sem_id);
-    }
+		}
 
     shmdt(shm_val);
     shmctl(shm_id, IPC_RMID, NULL);
-    // semctl(sem_id, 0, IPC_RMID, 0);
 }
 
 int shmem_nattach(int shm_id) {
