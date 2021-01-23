@@ -1,4 +1,4 @@
-name: build docker image and item definitions
+name: quay ci
 
 on:
   push:
@@ -11,12 +11,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@master
 
-    - name: Build, tag, and push image to docker hub
+    - name: Build, tag, and push image to Quay
       id: build-image
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        REGISTRY: quay.io
+        REPOSITORY: iyuroch/shmem
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        docker login -u="iyuroch" -p="${{ secrets.QUAY_PASSWORD }}" quay.io
+        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG . -f Dockerfile
+        docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
